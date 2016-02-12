@@ -334,6 +334,7 @@ export class Wasabi {
 
   onScrollEvent(event) {
     this.scrollTop = -screenPosition(this.wrapper).top
+    this.update()
   }
 
   update() {
