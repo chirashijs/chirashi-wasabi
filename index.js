@@ -117,6 +117,11 @@ export class Wasabi {
             this.addZone(zoneConfig, element)
           })
         }
+        else if (zoneConfig.elements) {
+          forElements(zoneConfig.elements, (element) => {
+            this.addZone(zoneConfig, element)
+          })
+        }
         else {
           this.addZone(zoneConfig)
         }
@@ -188,6 +193,7 @@ export class Wasabi {
         bottom: defaultify(offset.bottom, offset)
     }
 
+    console.log(element, top, zone.offset.top, top - zone.offset.top)
     zone.top = top - zone.offset.top
     zone.bottom = bottom + zone.offset.bottom
 
