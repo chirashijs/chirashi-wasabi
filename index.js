@@ -55,7 +55,7 @@ export class Wasabi {
     else {
         this.scroller = this.config.scroller
 
-        this.wrapper = this.scroller.wrapper
+        this.wrapper = this.scroller.element
         this.scrollTop = this.previousScrollTop = this.scroller.scroll.y
 
         this.scrollerCallback = this.onScroller.bind(this)
