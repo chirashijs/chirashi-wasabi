@@ -193,7 +193,6 @@ export class Wasabi {
         bottom: defaultify(offset.bottom, offset)
     }
 
-    console.log(element, top, zone.offset.top, top - zone.offset.top)
     zone.top = top - zone.offset.top
     zone.bottom = bottom + zone.offset.bottom
 
