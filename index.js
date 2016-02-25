@@ -83,8 +83,6 @@ export class Wasabi {
         this.running = true
         this.refresh()
         this.update()
-
-        console.log('zones', this.zones)
     }
 
     refreshCallback() {
