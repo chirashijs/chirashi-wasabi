@@ -1,6 +1,6 @@
 {
   "name": "chirashi-wasabi",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Wasabi plugin for Chirashi - Execute callbacks on scroll",
   "main": "index.js",
   "scripts": {
