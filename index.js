@@ -10,6 +10,7 @@ import clone from 'chirashi/src/dom/clone'
 
 import style from 'chirashi/src/styles/style'
 import screenPosition from 'chirashi/src/styles/screen-position'
+import offset from 'chirashi/src/styles/offset'
 import height from 'chirashi/src/styles/height'
 import transform from 'chirashi/src/styles/transform'
 import size from 'chirashi/src/styles/size'
@@ -99,7 +100,8 @@ export class Wasabi {
         this.windowHeight = window.innerHeight
         this.halfHeight = this.windowHeight/2
 
-        if (this.wrapper) this.wrapperHeight = height(this.wrapper)
+        this.wrapperTop = offset(this.wrapper).top
+
         if (this.config.debug) remove('#wasabi-debug .wasabi-marker')
 
         if (typeof this.config.zones == 'string') {
@@ -153,7 +155,7 @@ export class Wasabi {
 
             zone.parallax = []
             forElements(find(element, '[data-wasabi]'), (pxElement) => {
-                let options = eval('('+data(pxElement, 'wasabi')+')')
+                let options = eval('('+data(pxElement,'wasabi')+')')
 
                 let toX = (typeof options.x !== 'undefined') ? options.x : ((options.to && options.to.x) || 0),
                 toY = (typeof options.y !== 'undefined') ? options.y : ((options.to && options.to.y) || 0),
@@ -338,7 +340,7 @@ export class Wasabi {
     }
 
     onScrollEvent(event) {
-        this.scrollTop = -screenPosition(this.wrapper).top
+        this.scrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
         this.update()
     }
 
