@@ -387,6 +387,16 @@ export class Wasabi {
         this.previousScrollTop = this.scrollTop
     }
 
+    replay() {
+        forEach(this.zones, (zone) => {
+            if (zone.entered) {
+                if (zone.tween) zone.tween.resume()
+                if(zone.handler) zone.handler('enter', 'forward', zone.selector, zone.element)
+                if(zone.enter) zone.enter('forward', zone.selector, zone.element)
+            }
+        })
+    }
+
     kill() {
         remove(this.debugWrapper)
 
