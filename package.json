@@ -22,6 +22,6 @@
   },
   "homepage": "https://github.com/AlexToudic/chirashi-wasabi#readme",
   "dependencies": {
-    "chirashi": "^3.0.0"
+    "chirashi": "^3.0.2"
   }
 }
