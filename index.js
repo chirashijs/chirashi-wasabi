@@ -156,7 +156,7 @@ export default class Wasabi {
             bottom = top + height(element)
 
             zone.parallax = []
-            forElements(find(element, '[data-wasabi]'), (pxElement) => {
+            forEach(find(element, zoneConfig.parallax), (pxElement) => {
                 let options = eval('('+data(pxElement,'wasabi')+')')
 
                 let toX = (typeof options.x !== 'undefined') ? options.x : ((options.to && options.to.x) || 0),
