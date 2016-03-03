@@ -39,7 +39,7 @@ function randomColor () {
 }
 
 //Scroll manager
-export class Wasabi {
+export default class Wasabi {
     constructor(config) {
         this.config = defaultify(config, defaults)
 
@@ -87,6 +87,8 @@ export class Wasabi {
     }
 
     refreshCallback() {
+        if (this.killed) return
+
         clearTimeout(this.refreshTimeout)
         this.refreshTimeout = setTimeout(this.refresh.bind(this), 200)
     }
@@ -334,17 +336,23 @@ export class Wasabi {
     }
 
     onScroller(scrollTarget) {
+        if (this.killed) return
+
         this.scrollTop = this.scroller.scroll.y
         this.testSnapping(scrollTarget)
         this.update()
     }
 
     onScrollEvent(event) {
+        if (this.killed) return
+
         this.scrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
         this.update()
     }
 
     update() {
+        if (this.killed) return
+
         let i = this.zones.length,
         direction = this.previousScrollTop < this.scrollTop ? 'forward' : 'backward'
 
@@ -398,6 +406,10 @@ export class Wasabi {
     }
 
     kill() {
+        if (this.killed) return
+
+        this.killed = true
+
         remove(this.debugWrapper)
 
         if (this.scrollEventsCallback) {
@@ -456,5 +468,3 @@ export class Wasabi {
         }
     }
 }
-
-export default Wasabi
