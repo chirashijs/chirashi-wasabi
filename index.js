@@ -1,3 +1,5 @@
+import raf from 'raf'
+
 import forEach from 'chirashi/src/core/for-each'
 import forElements from 'chirashi/src/core/for-elements'
 
@@ -31,7 +33,8 @@ let defaults = {
     handle: {
         top: 'top',
         bottom: 'bottom'
-    }
+    },
+    parallaxEase: 0.8
 }
 
 function randomColor () {
@@ -183,7 +186,15 @@ export default class Wasabi {
                         toX: toX,
                         toY: toY,
                         fromX: fromX,
-                        fromY: fromY
+                        fromY: fromY,
+                        transform: {
+                            x: 0,
+                            y: 0
+                        },
+                        targetTransform: {
+                            x: 0,
+                            y: 0
+                        }
                     })
                 })
             }
@@ -356,7 +367,8 @@ export default class Wasabi {
         if (this.killed) return
 
         let i = this.zones.length,
-        direction = this.previousScrollTop < this.scrollTop ? 'forward' : 'backward'
+            direction = this.previousScrollTop < this.scrollTop ? 'forward' : 'backward',
+            updateParallax = false
 
         while (i--) {
             let zone = this.zones[i], entered, progress
@@ -382,11 +394,13 @@ export default class Wasabi {
 
             if (zone.parallax) {
                 forEach(zone.parallax, (item) => {
-                    transform(item.element, {
+                    item.targetTransform = {
                         x: item.fromX + (item.toX - item.fromX) * progress,
                         y: item.fromY + (item.toY - item.fromY) * progress
-                    })
+                    }
                 })
+
+                updateParallax = true
             }
 
             zone.entered = entered
@@ -397,6 +411,45 @@ export default class Wasabi {
         }
 
         this.previousScrollTop = this.scrollTop
+
+        if (updateParallax) this.updateParallaxIfNeeded()
+    }
+
+    updateParallaxIfNeeded() {
+        if (!this.updatingParallax)
+            this.updateParallax()
+    }
+
+    updateParallax() {
+        if (this.killed) return
+
+        this.updatingParallax = false
+
+        let i = this.zones.length
+
+        while (i--) {
+            let zone = this.zones[i]
+
+            if (zone.parallax) {
+                forEach(zone.parallax, (item) => {
+                    let dx = (item.targetTransform.x - item.transform.x) * this.config.parallaxEase,
+                        dy = (item.targetTransform.y - item.transform.y) * this.config.parallaxEase
+
+                    item.transform = {
+                        x: item.transform.x + dx,
+                        y: item.transform.y + dy
+                    }
+
+                    transform(item.element, item.transform)
+
+                    if (!this.updatingParallax)
+                        this.updatingParallax = Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1
+                })
+            }
+        }
+
+        if (this.updatingParallax)
+            raf(this.updateParallax.bind(this))
     }
 
     replay() {
