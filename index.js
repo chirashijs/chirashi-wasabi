@@ -155,36 +155,38 @@ export default class Wasabi {
             top = screenPosition(element).top + this.scrollTop
             bottom = top + height(element)
 
-            zone.parallax = []
-            forEach(find(element, zoneConfig.parallax), (pxElement) => {
-                let options = eval('('+data(pxElement,'wasabi')+')')
+            if (zoneConfig.parallax) {
+                zone.parallax = []
+                forEach(find(element, zoneConfig.parallax), (pxElement) => {
+                    let options = eval('('+data(pxElement,'wasabi')+')')
 
-                let toX = (typeof options.x !== 'undefined') ? options.x : ((options.to && options.to.x) || 0),
-                toY = (typeof options.y !== 'undefined') ? options.y : ((options.to && options.to.y) || 0),
-                fromX = (options.from && options.from.x) || 0,
-                fromY = (options.from && options.from.y) || 0,
-                parentSize = size(element.parentNode)
+                    let toX = (typeof options.x !== 'undefined') ? options.x : ((options.to && options.to.x) || 0),
+                    toY = (typeof options.y !== 'undefined') ? options.y : ((options.to && options.to.y) || 0),
+                    fromX = (options.from && options.from.x) || 0,
+                    fromY = (options.from && options.from.y) || 0,
+                    parentSize = size(element.parentNode)
 
-                if (typeof toX == 'string' && toX.indexOf('%') != -1)
-                toX = parseInt(toX, 10) * parentSize.width
+                    if (typeof toX == 'string' && toX.indexOf('%') != -1)
+                    toX = parseInt(toX, 10) * parentSize.width
 
-                if (typeof toY == 'string' && toY.indexOf('%') != -1)
-                toY = parseInt(toY, 10) * parentSize.height
+                    if (typeof toY == 'string' && toY.indexOf('%') != -1)
+                    toY = parseInt(toY, 10) * parentSize.height
 
-                if (typeof fromX == 'string' && fromX.indexOf('%') != -1)
-                fromX = parseInt(fromX, 10) * parentSize.width
+                    if (typeof fromX == 'string' && fromX.indexOf('%') != -1)
+                    fromX = parseInt(fromX, 10) * parentSize.width
 
-                if (typeof fromY == 'string' && fromY.indexOf('%') != -1)
-                fromY = parseInt(fromY, 10) * parentSize.height
+                    if (typeof fromY == 'string' && fromY.indexOf('%') != -1)
+                    fromY = parseInt(fromY, 10) * parentSize.height
 
-                zone.parallax.push({
-                    element: pxElement,
-                    toX: toX,
-                    toY: toY,
-                    fromX: fromX,
-                    fromY: fromY
+                    zone.parallax.push({
+                        element: pxElement,
+                        toX: toX,
+                        toY: toY,
+                        fromX: fromX,
+                        fromY: fromY
+                    })
                 })
-            })
+            }
         }
         else {
             top = zoneConfig.top
@@ -378,12 +380,14 @@ export default class Wasabi {
                 if(zone.leave) zone.leave(direction, zone.selector, zone.element)
             }
 
-            forEach(zone.parallax, (item) => {
-                transform(item.element, {
-                    x: item.fromX + (item.toX - item.fromX) * progress,
-                    y: item.fromY + (item.toY - item.fromY) * progress
+            if (zone.parallax) {
+                forEach(zone.parallax, (item) => {
+                    transform(item.element, {
+                        x: item.fromX + (item.toX - item.fromX) * progress,
+                        y: item.fromY + (item.toY - item.fromY) * progress
+                    })
                 })
-            })
+            }
 
             zone.entered = entered
             if (zone.entered) {
