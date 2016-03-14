@@ -11,8 +11,7 @@ import append from 'chirashi/src/dom/append'
 import clone from 'chirashi/src/dom/clone'
 
 import style from 'chirashi/src/styles/style'
-import screenPosition from 'chirashi/src/styles/screen-position'
-import offset from 'chirashi/src/styles/offset'
+import getOffset from 'chirashi/src/styles/offset'
 import height from 'chirashi/src/styles/height'
 import transform from 'chirashi/src/styles/transform'
 import size from 'chirashi/src/styles/size'
@@ -50,7 +49,7 @@ export default class Wasabi {
 
         if (!this.config.scroller) {
             this.wrapper = document.body
-            this.scrollTop = this.previousScrollTop = screenPosition(this.wrapper).top
+            this.scrollTop = this.previousScrollTop = getOffset(this.wrapper).top
 
             this.scrollEventsCallback = scroll(this.onScrollEvent.bind(this))
 
@@ -105,7 +104,7 @@ export default class Wasabi {
         this.windowHeight = window.innerHeight
         this.halfHeight = this.windowHeight/2
 
-        this.wrapperTop = offset(this.wrapper).top
+        this.wrapperTop = getOffset(this.wrapper).top
 
         if (this.config.debug) remove('#wasabi-debug .wasabi-marker')
 
@@ -155,7 +154,7 @@ export default class Wasabi {
         if (element) {
             zone.element = element
             zone.selector = zoneConfig.selector
-            top = screenPosition(element).top + this.scrollTop
+            top = getOffset(element).top + this.scrollTop
             bottom = top + height(element)
 
             if (zoneConfig.parallax) {
@@ -374,7 +373,6 @@ export default class Wasabi {
             let zone = this.zones[i], entered, progress
 
             progress = (this.scrollTop - zone[direction+'Top'])/zone[direction+'Size']
-
             entered = progress >= 0 && progress <= 1
 
             if (!zone.entered && entered) {
