@@ -14,15 +14,14 @@ import style from 'chirashi/src/styles/style'
 import screenPosition from 'chirashi/src/styles/screen-position'
 import getOffset from 'chirashi/src/styles/offset'
 import height from 'chirashi/src/styles/height'
-import transform from 'chirashi/src/styles/transform'
 import size from 'chirashi/src/styles/size'
 
 import resize from 'chirashi/src/events/resize'
 import unresize from 'chirashi/src/events/unresize'
-import scroll from 'chirashi/src/events/scroll'
-import unscroll from 'chirashi/src/events/unscroll'
 
 import defaultify from 'chirashi/src/utils/defaultify'
+
+import ScrollEvents from 'chirashi-scroll-events'
 
 let defaults = {
     debug: false,
@@ -34,12 +33,39 @@ let defaults = {
         top: 'top',
         bottom: 'bottom'
     },
-    parallaxEase: 0.8
+    parallaxEase: 0.4
 }
 
 function randomColor () {
     return '#' + Math.floor(Math.random()*16777215).toString(16)
 }
+
+function translate2d(element, transformation, keep) {
+    if (!element.style) return
+
+    let style = 'translate('+ (transformation.x || 0) +'px,'+ (transformation.y) || 0 +'px)'
+    element.style[prefix+'transform'] = style
+    element.style.transform = style
+}
+
+function translate3d(element, transformation, keep) {
+    if (!element.style) return
+
+    let style = 'translate3d('+ (transformation.x || 0) +'px,'+ (transformation.y || 0) +'px,'+ (transformation.z || 0) +'px)'
+    element.style[prefix+'transform'] = style
+    element.style.transform = style
+}
+
+const prefix = '-'+(Array.prototype.slice
+  .call(window.getComputedStyle(document.documentElement, ''))
+  .join('')
+  .match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
+)[1]+'-'
+document.documentElement.style[prefix+'transform'] = 'translate3d(0, 0, 0)'
+const use2d = !document.documentElement.style[prefix+'transform']
+document.documentElement.style[prefix+'transform'] = ''
+
+const translate = use2d ? translate2d : translate3d
 
 //Scroll manager
 export default class Wasabi {
@@ -49,9 +75,13 @@ export default class Wasabi {
         this.wrapper = this.scroller ? this.scroller.wrapper : document.body
 
         if (!this.config.scroller) {
-            this.wrapper = document.body
-
-            this.scrollEventsCallback = scroll(this.onScrollEvent.bind(this))
+            this.scrollEvents = new ScrollEvents({
+                touchMult: 1,
+	            firefoxMult: 1,
+	            keyStep: 120,
+	            mouseMult: 1
+            })
+            this.scrollEvents.on(this.onScrollEvent.bind(this))
 
             this.resizeCallback = resize(this.refreshCallback.bind(this))
         }
@@ -362,6 +392,7 @@ export default class Wasabi {
         if (this.killed) return
 
         this.scrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
+
         this.update()
     }
 
@@ -442,7 +473,7 @@ export default class Wasabi {
                         y: item.transform.y + dy
                     }
 
-                    transform(item.element, item.transform)
+                    translate(item.element, item.transform)
 
                     if (!this.updatingParallax)
                         this.updatingParallax = Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1
@@ -472,7 +503,7 @@ export default class Wasabi {
         remove(this.debugWrapper)
 
         if (this.scrollEventsCallback) {
-            unscroll(this.scrollEventsCallback)
+            this.scrollEvents.kill()
             unresize(this.resizeCallback)
         }
         else if (this.scrollerCallback) {
