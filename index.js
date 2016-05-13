@@ -112,7 +112,8 @@ export default class Wasabi {
             append(this.wrapper, this.debugWrapper)
         }
 
-        // this.currentSnapIndex = 0
+        this.zonesConfig = (this.config.zones instanceof Array) ? this.config.zones : [this.config.zones]
+
         this.running = true
         this.refresh()
         this.update()
@@ -141,7 +142,7 @@ export default class Wasabi {
 
         if (this.config.debug) remove('#wasabi-debug .wasabi-marker')
 
-        this.addZones(this.config.zones)
+        this.bindZones(this.zonesConfig)
 
         if (this.snaps.length) {
             this.snaps.sort((a, b) => {
@@ -153,34 +154,42 @@ export default class Wasabi {
     }
 
     addZones(zones) {
-        if (typeof zones == 'string') {
-            forElements(zones, (element) => {
-                this.bindZone({}, element)
-            })
-        }
-        else {
-            let i = zones.length
-            while (i--) {
-                let zoneConfig = zones[i]
+        if (!(zones instanceof Array))
+            zones = [zones]
 
-                if (zoneConfig.selector) {
-                    forElements(zoneConfig.selector, (element) => {
-                        this.bindZone(zoneConfig, element)
-                    })
-                }
-                else if (zoneConfig.elements) {
-                    forElements(zoneConfig.elements, (element) => {
-                        this.bindZone(zoneConfig, element)
-                    })
-                }
-                else {
-                    this.bindZone(zoneConfig)
-                }
+        this.zonesConfig.concat(zones)
+
+        this.bindZones(zones)
+    }
+
+    bindZones(zones) {
+        let i = zones.length
+        while (i--) {
+            let zoneConfig = zones[i]
+
+            if (typeof zoneConfig == 'string') {
+                forElements(zones, (element) => {
+                    this.bindZone({}, element)
+                })
+            }
+            else if (zoneConfig.selector) {
+                forElements(zoneConfig.selector, (element) => {
+                    this.bindZone(zoneConfig, element)
+                })
+            }
+            else if (zoneConfig.elements) {
+                forElements(zoneConfig.elements, (element) => {
+                    this.bindZone(zoneConfig, element)
+                })
+            }
+            else {
+                this.bindZone(zoneConfig)
             }
         }
     }
 
     bindZone(zoneConfig, element) {
+
         let zone = {},
         top, bottom
 
@@ -242,8 +251,8 @@ export default class Wasabi {
             bottom: defaultify(offset.bottom, offset)
         }
 
-        zone.offsetTop    = top - zone.offset.top
-        zone.offsetBottom = bottom + zone.offset.bottom
+        zone.offsetTop    = zone.top - zone.offset.top
+        zone.offsetBottom = zone.bottom + zone.offset.bottom
 
         if (this.config.debug) {
             let color = randomColor()
@@ -356,8 +365,6 @@ export default class Wasabi {
 
     snapTo(top, direction) {
         this.lock = true
-
-        console.log('snapTo', top)
 
         if (!this.scroller) {
             this.scrollEvents.options.preventDefault = true
