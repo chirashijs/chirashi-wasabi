@@ -112,7 +112,7 @@ export default class Wasabi {
             append(this.wrapper, this.debugWrapper)
         }
 
-        this.currentSnapIndex = 0
+        // this.currentSnapIndex = 0
         this.running = true
         this.refresh()
         this.update()
@@ -141,37 +141,9 @@ export default class Wasabi {
 
         if (this.config.debug) remove('#wasabi-debug .wasabi-marker')
 
-        if (typeof this.config.zones == 'string') {
-            forElements(this.config.zones, (element) => {
-                this.addZone({}, element)
-            })
-        }
-        else {
-            let i = this.config.zones.length
-            while (i--) {
-                let zoneConfig = this.config.zones[i]
-
-                if (zoneConfig.selector) {
-                    forElements(zoneConfig.selector, (element) => {
-                        this.addZone(zoneConfig, element)
-                    })
-                }
-                else if (zoneConfig.elements) {
-                    forElements(zoneConfig.elements, (element) => {
-                        this.addZone(zoneConfig, element)
-                    })
-                }
-                else {
-                    this.addZone(zoneConfig)
-                }
-            }
-        }
+        this.addZones(this.config.zones)
 
         if (this.snaps.length) {
-            if (!this.scroller) {
-                console.error('snap option needs a SmoothScroller instance')
-            }
-
             this.snaps.sort((a, b) => {
                 return a.top - b.top
             })
@@ -180,25 +152,53 @@ export default class Wasabi {
         }
     }
 
-    addZone(zoneConfig, element) {
+    addZones(zones) {
+        if (typeof zones == 'string') {
+            forElements(zones, (element) => {
+                this.bindZone({}, element)
+            })
+        }
+        else {
+            let i = zones.length
+            while (i--) {
+                let zoneConfig = zones[i]
+
+                if (zoneConfig.selector) {
+                    forElements(zoneConfig.selector, (element) => {
+                        this.bindZone(zoneConfig, element)
+                    })
+                }
+                else if (zoneConfig.elements) {
+                    forElements(zoneConfig.elements, (element) => {
+                        this.bindZone(zoneConfig, element)
+                    })
+                }
+                else {
+                    this.bindZone(zoneConfig)
+                }
+            }
+        }
+    }
+
+    bindZone(zoneConfig, element) {
         let zone = {},
         top, bottom
 
         if (element) {
-            zone.element = element
+            zone.element  = element
             zone.selector = zoneConfig.selector
-            top = getOffset(element).top - this.wrapperTop
-            bottom = top + height(element)
+            zone.top      = getOffset(element).top - this.wrapperTop
+            zone.bottom   = zone.top + height(element)
 
             if (zoneConfig.parallax) {
                 zone.parallax = []
                 forEach(find(element, zoneConfig.parallax), (pxElement) => {
                     let options = eval('('+data(pxElement,'wasabi')+')')
 
-                    let toX = (typeof options.x !== 'undefined') ? options.x : ((options.to && options.to.x) || 0),
-                    toY = (typeof options.y !== 'undefined') ? options.y : ((options.to && options.to.y) || 0),
-                    fromX = (options.from && options.from.x) || 0,
-                    fromY = (options.from && options.from.y) || 0,
+                    let toX    = (typeof options.x !== 'undefined') ? options.x : ((options.to && options.to.x) || 0),
+                    toY        = (typeof options.y !== 'undefined') ? options.y : ((options.to && options.to.y) || 0),
+                    fromX      = (options.from && options.from.x) || 0,
+                    fromY      = (options.from && options.from.y) || 0,
                     parentSize = size(element.parentNode)
 
                     if (typeof toX == 'string' && toX.indexOf('%') != -1)
@@ -232,8 +232,8 @@ export default class Wasabi {
             }
         }
         else {
-            top = zoneConfig.top
-            bottom = zoneConfig.bottom
+            zone.top    = zoneConfig.top
+            zone.bottom = zoneConfig.bottom
         }
 
         let offset = defaultify(zoneConfig.offset, this.config.offset)
@@ -242,8 +242,8 @@ export default class Wasabi {
             bottom: defaultify(offset.bottom, offset)
         }
 
-        zone.top = top - zone.offset.top
-        zone.bottom = bottom + zone.offset.bottom
+        zone.offsetTop    = top - zone.offset.top
+        zone.offsetBottom = bottom + zone.offset.bottom
 
         if (this.config.debug) {
             let color = randomColor()
@@ -255,7 +255,7 @@ export default class Wasabi {
             append(this.debugWrapper, topDebug)
             style(topDebug, {
                 position: 'absolute',
-                top: zone.top,
+                top: zone.offsetTop,
                 right: 0,
                 width: 25,
                 height: 2,
@@ -267,7 +267,7 @@ export default class Wasabi {
             style(bottomDebug, {
                 'z-index': 9999,
                 position: 'absolute',
-                top: zone.bottom,
+                top: zone.offsetBottom,
                 right: 0,
                 width: 25,
                 height: 2,
@@ -275,13 +275,13 @@ export default class Wasabi {
             })
         }
 
-        zone.size = zone.bottom - zone.top
-        zone.handle = zoneConfig.handle || this.config.handle
+        zone.size     = zone.offsetBottom - zone.offsetTop
+        zone.handle   = zoneConfig.handle || this.config.handle
         zone.progress = zoneConfig.progress || this.config.progress
-        zone.snap = zoneConfig.snap || this.config.snap
-        zone.handler = zoneConfig.handler || this.config.handler
-        zone.enter = zoneConfig.enter || this.config.enter
-        zone.leave = zoneConfig.leave || this.config.leave
+        zone.snap     = zoneConfig.snap || this.config.snap
+        zone.handler  = zoneConfig.handler || this.config.handler
+        zone.enter    = zoneConfig.enter || this.config.enter
+        zone.leave    = zoneConfig.leave || this.config.leave
 
         if (zoneConfig.tween) {
             zone.tween = zoneConfig.tween
@@ -306,98 +306,141 @@ export default class Wasabi {
         }
 
         if (handles.forward.top == 'middle') {
-            zone.forwardTop = zone.top - this.halfHeight
+            zone.forwardTop = zone.offsetTop - this.halfHeight
         }
         else if (handles.forward.top == 'bottom') {
-            zone.forwardTop = zone.top - this.windowHeight
+            zone.forwardTop = zone.offsetTop - this.windowHeight
         }
         else {
-            zone.forwardTop = zone.top
+            zone.forwardTop = zone.offsetTop
         }
 
         if (handles.forward.bottom == 'middle') {
-            zone.forwardBottom = zone.bottom - this.halfHeight
+            zone.forwardBottom = zone.offsetBottom - this.halfHeight
         }
         else if (handles.forward.bottom == 'bottom') {
-            zone.forwardBottom = zone.bottom - this.windowHeight
+            zone.forwardBottom = zone.offsetBottom - this.windowHeight
         }
         else {
-            zone.forwardBottom = zone.bottom
+            zone.forwardBottom = zone.offsetBottom
         }
 
         zone.forwardSize = Math.max(this.config.stepMinSize, zone.forwardBottom - zone.forwardTop)
 
         if (handles.backward.top == 'middle') {
-            zone.backwardTop = zone.top - this.halfHeight
+            zone.backwardTop = zone.offsetTop - this.halfHeight
         }
         else if (handles.backward.top == 'bottom') {
-            zone.backwardTop = zone.top - this.windowHeight
+            zone.backwardTop = zone.offsetTop - this.windowHeight
         }
         else {
-            zone.backwardTop = zone.top
+            zone.backwardTop = zone.offsetTop
         }
 
         if (handles.backward.bottom == 'middle') {
-            zone.backwardBottom = zone.bottom - this.halfHeight
+            zone.backwardBottom = zone.offsetBottom - this.halfHeight
         }
         else if (handles.backward.bottom == 'bottom') {
-            zone.backwardBottom = zone.bottom - this.windowHeight
+            zone.backwardBottom = zone.offsetBottom - this.windowHeight
         }
         else {
-            zone.backwardBottom = zone.bottom
+            zone.backwardBottom = zone.offsetBottom
         }
 
         zone.backwardSize = Math.max(this.config.stepMinSize, zone.backwardBottom - zone.backwardTop)
 
-        if (zone.snap) this.snaps.push(zone)
+        if (zone.snap) this.addSnapZone(zoneConfig, zone)
 
         this.zones.push(zone)
     }
 
-    testSnapping(scrollTarget) {
-        if (!this.scroller.scrollEnabled || !this.snaps.length) return
+    snapTo(top, direction) {
+        this.lock = true
 
-        let previous = this.snaps[this.currentSnapIndex-1],
-        next = this.snaps[this.currentSnapIndex+1]
+        console.log('snapTo', top)
 
-        if (previous && scrollTarget.y < this.currentSnap.top) {
-            --this.currentSnapIndex
-            this.currentSnap = previous
-
+        if (!this.scroller) {
+            this.scrollEvents.options.preventDefault = true
+            this.scrollTo(top, direction)
+        }
+        else {
             this.scroller.scrollTo({
                 x: 0,
-                y: (previous.bottom - this.currentSnap.offset.bottom) - Math.min(previous.size, this.windowHeight)-1
+                y: top
             })
         }
-        else if (next && scrollTarget.y > this.currentSnap.bottom - this.windowHeight) {
-            ++this.currentSnapIndex
-            this.currentSnap = next
+    }
 
-            this.scroller.scrollTo({
-                x: 0,
-                y: (next.top + this.currentSnap.offset.top)+1
-            })
+    scrollTo(top, direction) {
+        this.scrollTop += (top - this.scrollTop) * 0.1
+
+        window.scrollTo(0, this.scrollTop)
+
+        if (direction == 'forward' ? this.scrollTop < top-1 : this.scrollTop > top+1)
+            raf(this.scrollTo.bind(this, top, direction))
+        else {
+            this.lock = false
+
+            if (!this.scroller)
+                this.scrollEvents.options.preventDefault = false
         }
+    }
+
+    addSnapZone(zoneConfig, zone) {
+        let snapZone = {}
+
+        snapZone.top = zone.top
+        snapZone.bottom = zone.bottom
+
+        let offset = defaultify(zoneConfig.snapOffset, this.config.snapOffset)
+        snapZone.offset = {
+            top: defaultify(offset.top, offset),
+            bottom: defaultify(offset.bottom, offset)
+        }
+
+        snapZone.offsetTop    = snapZone.top + snapZone.offset.top
+        snapZone.offsetBottom = snapZone.bottom + snapZone.offset.bottom
+
+        snapZone.size = snapZone.offsetBottom - snapZone.offsetTop
+
+        if (zoneConfig.snap == 'enter' || zoneConfig.snap == 'both')
+            snapZone.enter = (direction) => { this.snapTo(direction == 'forward' ? snapZone.top : snapZone.bottom - this.windowHeight, direction) }
+
+        if (zoneConfig.snap == 'leave' || zoneConfig.snap == 'both')
+            snapZone.leave = (direction) => { this.snapTo(direction == 'forward' ? snapZone.bottom : snapZone.top  - this.windowHeight, direction) }
+
+        snapZone.forwardTop = snapZone.top - this.windowHeight
+        snapZone.forwardBottom = snapZone.bottom - this.windowHeight
+
+        snapZone.forwardSize = Math.max(this.config.stepMinSize, snapZone.forwardBottom - snapZone.forwardTop)
+
+        snapZone.backwardTop = snapZone.top
+        snapZone.backwardBottom = snapZone.bottom
+
+        snapZone.backwardSize = Math.max(this.config.stepMinSize, snapZone.backwardBottom - snapZone.backwardTop)
+
+        this.zones.push(snapZone)
     }
 
     onScroller(scrollTarget) {
         if (this.killed) return
 
         this.scrollTop = this.scroller.scroll.y
-        this.testSnapping(scrollTarget)
+        // this.testSnapping()
         this.update()
     }
 
     onScrollEvent(event) {
-        if (this.killed) return
+        if (this.killed || this.lock) return
 
         this.scrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
+        // this.testSnapping()
 
         this.update()
     }
 
     update() {
-        if (this.killed) return
+        if (this.killed || this.previousScrollTop == this.scrollTop) return
 
         let i = this.zones.length,
             direction = this.previousScrollTop < this.scrollTop ? 'forward' : 'backward',
@@ -411,16 +454,14 @@ export default class Wasabi {
             entered = progress >= 0 && progress <= 1
 
             if (!zone.entered && entered) {
+
                 if (zone.tween) zone.tween.resume()
                 if(zone.handler) zone.handler('enter', direction, zone.selector, zone.element)
                 if(zone.enter) zone.enter(direction, zone.selector, zone.element)
 
-                if(zone.snap) {
-                    this.currentSnapIndex = this.snaps.indexOf(zone)
-                    this.currentSnap = this.snaps[this.currentSnapIndex]
-                }
             }
             else if (zone.entered && !entered) {
+
                 if(zone.handler) zone.handler('leave', direction, zone.selector, zone.element)
                 if(zone.leave) zone.leave(direction, zone.selector, zone.element)
             }
