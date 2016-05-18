@@ -433,7 +433,7 @@ export default class Wasabi {
         if (this.killed) return
 
         this.scrollTop = this.scroller.scroll.y
-        // this.testSnapping()
+
         this.update()
     }
 
@@ -441,7 +441,6 @@ export default class Wasabi {
         if (this.killed || this.lock) return
 
         this.scrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
-        // this.testSnapping()
 
         this.update()
     }
@@ -567,7 +566,7 @@ export default class Wasabi {
             if (zone.progressTween) this.killTimeline(zone.progressTween)
         }
 
-        this.zones = this.snaps = null
+        this.zones = null
     }
 
     concatenateVars(object) {
