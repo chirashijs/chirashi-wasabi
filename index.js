@@ -445,8 +445,8 @@ export default class Wasabi {
         this.update()
     }
 
-    update() {
-        if (this.killed || this.previousScrollTop == this.scrollTop) return
+    update(force) {
+        if (this.killed || !force && this.previousScrollTop == this.scrollTop) return
 
         let i = this.zones.length,
             direction = this.previousScrollTop < this.scrollTop ? 'forward' : 'backward',
@@ -533,6 +533,8 @@ export default class Wasabi {
     }
 
     replay() {
+        this.update(true)
+
         forEach(this.zones, (zone) => {
             if (zone.entered) {
                 if (zone.tween) zone.tween.resume()
