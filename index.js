@@ -417,7 +417,6 @@ export default class Wasabi {
 
         snapZone.backwardSize = Math.max(this.config.stepMinSize, snapZone.backwardBottom - snapZone.backwardTop)
 
-        console.log('snapZone', snapZone)
         this.zones.push(snapZone)
     }
 
