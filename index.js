@@ -130,7 +130,6 @@ export default class Wasabi {
         if (this.config.debug) console.log('%c WASABI DEBUG ', 'background: #2d2d2d color: #b0dd44')
 
         this.zones = []
-        this.snaps = []
 
         this.windowHeight = window.innerHeight
         this.halfHeight = this.windowHeight/2
@@ -143,14 +142,6 @@ export default class Wasabi {
         if (this.config.debug) remove('#wasabi-debug .wasabi-marker')
 
         this.bindZones(this.zonesConfig)
-
-        if (this.snaps.length) {
-            this.snaps.sort((a, b) => {
-                return a.top - b.top
-            })
-
-            this.currentSnap = this.snaps[this.currentSnapIndex]
-        }
     }
 
     addZones(zones) {
@@ -426,6 +417,7 @@ export default class Wasabi {
 
         snapZone.backwardSize = Math.max(this.config.stepMinSize, snapZone.backwardBottom - snapZone.backwardTop)
 
+        console.log('snapZone', snapZone)
         this.zones.push(snapZone)
     }
 
@@ -433,7 +425,7 @@ export default class Wasabi {
         if (this.killed) return
 
         this.scrollTop = this.scroller.scroll.y
-
+        // this.testSnapping()
         this.update()
     }
 
@@ -441,12 +433,13 @@ export default class Wasabi {
         if (this.killed || this.lock) return
 
         this.scrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
+        // this.testSnapping()
 
         this.update()
     }
 
-    update(force) {
-        if (this.killed || !force && this.previousScrollTop == this.scrollTop) return
+    update() {
+        if (this.killed || this.previousScrollTop == this.scrollTop) return
 
         let i = this.zones.length,
             direction = this.previousScrollTop < this.scrollTop ? 'forward' : 'backward',
@@ -533,8 +526,6 @@ export default class Wasabi {
     }
 
     replay() {
-        this.update(true)
-
         forEach(this.zones, (zone) => {
             if (zone.entered) {
                 if (zone.tween) zone.tween.resume()
@@ -566,6 +557,14 @@ export default class Wasabi {
 
             if (zone.tween) this.killTimeline(zone.tween)
             if (zone.progressTween) this.killTimeline(zone.progressTween)
+
+            if (zone.parallax) {
+                forEach(zone.parallax, (item) => {
+                    style(item.element, {
+                        transform: ''
+                    })
+                })
+            }
         }
 
         this.zones = null
