@@ -127,7 +127,7 @@ export default class Wasabi {
     }
 
     refresh() {
-        if (this.config.debug) console.log('%c WASABI DEBUG ', 'background: #2d2d2d color: #b0dd44')
+        if (this.config.debug) console.log('%c WASABI DEBUG ', 'background: #2d2d2d; color: #b0dd44')
 
         this.zones = []
 
@@ -252,6 +252,7 @@ export default class Wasabi {
             console.log(zone.element)
 
             let topDebug = createElement(`<div class="wasabi-marker"></div>`)
+            console.log('top', topDebug)
             append(this.debugWrapper, topDebug)
             style(topDebug, {
                 position: 'absolute',
@@ -263,6 +264,7 @@ export default class Wasabi {
             })
 
             let bottomDebug = clone(topDebug)
+            console.log('bottom', bottomDebug)
             append(this.debugWrapper, bottomDebug)
             style(bottomDebug, {
                 'z-index': 9999,
@@ -352,6 +354,7 @@ export default class Wasabi {
         if (zone.snap) this.addSnapZone(zoneConfig, zone)
 
         this.zones.push(zone)
+        this.updateZone(zone)
     }
 
     snapTo(top, direction) {
@@ -424,7 +427,6 @@ export default class Wasabi {
         if (this.killed) return
 
         this.scrollTop = this.scroller.scroll.y
-        // this.testSnapping()
         this.update()
     }
 
@@ -432,8 +434,6 @@ export default class Wasabi {
         if (this.killed || this.lock) return
 
         this.scrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
-        // this.testSnapping()
-
         this.update()
     }
 
@@ -444,47 +444,51 @@ export default class Wasabi {
             direction = this.previousScrollTop < this.scrollTop ? 'forward' : 'backward',
             updateParallax = false
 
-        while (i--) {
-            let zone = this.zones[i], entered, progress
-
-            progress = (this.scrollTop - zone[direction+'Top'])/zone[direction+'Size']
-
-            entered = progress >= 0 && progress <= 1
-
-            if (!zone.entered && entered) {
-
-                if (zone.tween) zone.tween.resume()
-                if(zone.handler) zone.handler('enter', direction, zone.selector, zone.element)
-                if(zone.enter) zone.enter(direction, zone.selector, zone.element)
-
-            }
-            else if (zone.entered && !entered) {
-
-                if(zone.handler) zone.handler('leave', direction, zone.selector, zone.element)
-                if(zone.leave) zone.leave(direction, zone.selector, zone.element)
-            }
-
-            if (zone.parallax) {
-                forEach(zone.parallax, (item) => {
-                    item.targetTransform = {
-                        x: item.fromX + (item.toX - item.fromX) * progress,
-                        y: item.fromY + (item.toY - item.fromY) * progress
-                    }
-                })
-
-                updateParallax = true
-            }
-
-            zone.entered = entered
-            if (zone.entered) {
-                if (zone.progress) zone.progress(direction, progress, zone.selector)
-                if (zone.progressTween && zone.progressTween.progress) zone.progressTween.progress(progress)
-            }
-        }
+        forEach(this.zones, zone => updateParallax = this.updateZone(zone, direction))
 
         this.previousScrollTop = this.scrollTop
 
         if (updateParallax) this.updateParallaxIfNeeded()
+    }
+
+    updateZone(zone, direction = 'forward') {
+      let entered, progress, updateParallax
+
+      progress = (this.scrollTop - zone[direction+'Top'])/zone[direction+'Size']
+
+      entered = progress >= 0 && progress <= 1
+
+      if (!zone.entered && entered) {
+
+          if (zone.tween) zone.tween.resume()
+          if(zone.handler) zone.handler('enter', direction, zone.selector, zone.element)
+          if(zone.enter) zone.enter(direction, zone.selector, zone.element)
+
+      }
+      else if (zone.entered && !entered) {
+
+          if(zone.handler) zone.handler('leave', direction, zone.selector, zone.element)
+          if(zone.leave) zone.leave(direction, zone.selector, zone.element)
+      }
+
+      if (zone.parallax) {
+          forEach(zone.parallax, (item) => {
+              item.targetTransform = {
+                  x: item.fromX + (item.toX - item.fromX) * progress,
+                  y: item.fromY + (item.toY - item.fromY) * progress
+              }
+          })
+
+          updateParallax = true
+      }
+
+      zone.entered = entered
+      if (zone.entered) {
+          if (zone.progress) zone.progress(direction, progress, zone.selector)
+          if (zone.progressTween && zone.progressTween.progress) zone.progressTween.progress(progress)
+      }
+
+      return updateParallax
     }
 
     updateParallaxIfNeeded() {
