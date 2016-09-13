@@ -148,7 +148,7 @@ export default class Wasabi {
         if (!(zones instanceof Array))
             zones = [zones]
 
-        this.zonesConfig.concat(zones)
+        this.zonesConfig = [...this.zonesConfig, ...zones]
 
         this.bindZones(zones)
     }
@@ -180,7 +180,6 @@ export default class Wasabi {
     }
 
     bindZone(zoneConfig, element) {
-
         let zone = {},
         top, bottom
 
@@ -444,7 +443,7 @@ export default class Wasabi {
             direction = this.previousScrollTop < this.scrollTop ? 'forward' : 'backward',
             updateParallax = false
 
-        forEach(this.zones, zone => updateParallax = this.updateZone(zone, direction))
+        forEach(this.zones, zone => updateParallax = this.updateZone(zone, direction) || updateParallax)
 
         this.previousScrollTop = this.scrollTop
 
