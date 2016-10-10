@@ -1,3 +1,4 @@
+import fastdom from 'fastdom'
 import raf from 'raf'
 
 import forEach from 'chirashi/src/core/for-each'
@@ -100,15 +101,19 @@ export default class Wasabi {
 
         if (this.config.debug) {
             this.debugWrapper = createElement('<div id="wasabi-debug"></div>')
-            style(this.debugWrapper, {
-                'z-index': 10000,
-                width: 25,
-                height: height(this.wrapper),
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                background: '#2d2d2d'
+
+            fastdom.mutate(() => {
+              style(this.debugWrapper, {
+                  'z-index': 10000,
+                  width: 25,
+                  height: height(this.wrapper),
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  background: '#2d2d2d'
+              })
             })
+
             append(this.wrapper, this.debugWrapper)
         }
 
@@ -131,17 +136,19 @@ export default class Wasabi {
 
         this.zones = []
 
-        this.windowHeight = window.innerHeight
-        this.halfHeight = this.windowHeight/2
-
-        this.wrapperTop = getOffset(this.wrapper).top
-
-        if (!this.config.scroller)
-            this.scrollTop = this.previousScrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
-
         if (this.config.debug) remove('#wasabi-debug .wasabi-marker')
 
-        this.bindZones(this.zonesConfig)
+        fastdom.measure(() => {
+          this.windowHeight = window.innerHeight
+          this.halfHeight = this.windowHeight/2
+
+          this.wrapperTop = getOffset(this.wrapper).top
+
+          if (!this.config.scroller)
+            this.scrollTop = this.previousScrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
+
+          this.bindZones(this.zonesConfig)
+        })
     }
 
     addZones(zones) {
@@ -183,177 +190,181 @@ export default class Wasabi {
         let zone = {},
         top, bottom
 
-        if (element) {
-            zone.element  = element
-            zone.selector = zoneConfig.selector
-            zone.top      = getOffset(element).top - this.wrapperTop
-            zone.bottom   = zone.top + height(element)
+        fastdom.measure(() => {
+          if (element) {
+              zone.element  = element
+              zone.selector = zoneConfig.selector
+              zone.top      = getOffset(element).top - this.wrapperTop
+              zone.bottom   = zone.top + height(element)
 
-            if (zoneConfig.parallax) {
-                zone.parallax = []
-                forEach(find(element, zoneConfig.parallax), (pxElement) => {
-                    let options = eval('('+data(pxElement,'wasabi')+')')
+              if (zoneConfig.parallax) {
+                  zone.parallax = []
+                  forEach(find(element, zoneConfig.parallax), (pxElement) => {
+                      let options = eval('('+data(pxElement,'wasabi')+')')
 
-                    let toX    = (typeof options.x !== 'undefined') ? options.x : ((options.to && options.to.x) || 0),
-                    toY        = (typeof options.y !== 'undefined') ? options.y : ((options.to && options.to.y) || 0),
-                    fromX      = (options.from && options.from.x) || 0,
-                    fromY      = (options.from && options.from.y) || 0,
-                    parentSize = size(element.parentNode)
+                      let toX    = (typeof options.x !== 'undefined') ? options.x : ((options.to && options.to.x) || 0),
+                      toY        = (typeof options.y !== 'undefined') ? options.y : ((options.to && options.to.y) || 0),
+                      fromX      = (options.from && options.from.x) || 0,
+                      fromY      = (options.from && options.from.y) || 0,
+                      parentSize = size(element.parentNode)
 
-                    if (typeof toX == 'string' && toX.indexOf('%') != -1)
-                    toX = parseInt(toX, 10) * parentSize.width
+                      if (typeof toX == 'string' && toX.indexOf('%') != -1)
+                      toX = parseInt(toX, 10) * parentSize.width
 
-                    if (typeof toY == 'string' && toY.indexOf('%') != -1)
-                    toY = parseInt(toY, 10) * parentSize.height
+                      if (typeof toY == 'string' && toY.indexOf('%') != -1)
+                      toY = parseInt(toY, 10) * parentSize.height
 
-                    if (typeof fromX == 'string' && fromX.indexOf('%') != -1)
-                    fromX = parseInt(fromX, 10) * parentSize.width
+                      if (typeof fromX == 'string' && fromX.indexOf('%') != -1)
+                      fromX = parseInt(fromX, 10) * parentSize.width
 
-                    if (typeof fromY == 'string' && fromY.indexOf('%') != -1)
-                    fromY = parseInt(fromY, 10) * parentSize.height
+                      if (typeof fromY == 'string' && fromY.indexOf('%') != -1)
+                      fromY = parseInt(fromY, 10) * parentSize.height
 
-                    zone.parallax.push({
-                        element: pxElement,
-                        toX: toX,
-                        toY: toY,
-                        fromX: fromX,
-                        fromY: fromY,
-                        transform: {
-                            x: 0,
-                            y: 0
-                        },
-                        targetTransform: {
-                            x: 0,
-                            y: 0
-                        }
-                    })
-                })
-            }
-        }
-        else {
-            zone.top    = zoneConfig.top
-            zone.bottom = zoneConfig.bottom
-        }
+                      zone.parallax.push({
+                          element: pxElement,
+                          toX: toX,
+                          toY: toY,
+                          fromX: fromX,
+                          fromY: fromY,
+                          transform: {
+                              x: 0,
+                              y: 0
+                          },
+                          targetTransform: {
+                              x: 0,
+                              y: 0
+                          }
+                      })
+                  })
+              }
+          }
+          else {
+              zone.top    = zoneConfig.top
+              zone.bottom = zoneConfig.bottom
+          }
 
-        let offset = defaultify(zoneConfig.offset, this.config.offset)
-        zone.offset = {
-            top: defaultify(offset.top, offset),
-            bottom: defaultify(offset.bottom, offset)
-        }
+          let offset = defaultify(zoneConfig.offset, this.config.offset)
+          zone.offset = {
+              top: defaultify(offset.top, offset),
+              bottom: defaultify(offset.bottom, offset)
+          }
 
-        zone.offsetTop    = zone.top - zone.offset.top
-        zone.offsetBottom = zone.bottom + zone.offset.bottom
+          zone.offsetTop    = zone.top - zone.offset.top
+          zone.offsetBottom = zone.bottom + zone.offset.bottom
 
-        if (this.config.debug) {
-            let color = randomColor()
+          if (this.config.debug) {
+            fastdom.mutate(() => {
+              let color = randomColor()
 
-            console.log(zone.selector +' %c ' + color, 'color:'+color)
-            console.log(zone.element)
+              console.log(zone.selector +' %c ' + color, 'color:'+color)
+              console.log(zone.element)
 
-            let topDebug = createElement(`<div class="wasabi-marker"></div>`)
-            console.log('top', topDebug)
-            append(this.debugWrapper, topDebug)
-            style(topDebug, {
-                position: 'absolute',
-                top: zone.offsetTop,
-                right: 0,
-                width: 25,
-                height: 2,
-                background: color
+              let topDebug = createElement(`<div class="wasabi-marker"></div>`)
+              console.log('top', topDebug)
+              append(this.debugWrapper, topDebug)
+              style(topDebug, {
+                  position: 'absolute',
+                  top: zone.offsetTop,
+                  right: 0,
+                  width: 25,
+                  height: 2,
+                  background: color
+              })
+
+              let bottomDebug = clone(topDebug)
+              console.log('bottom', bottomDebug)
+              append(this.debugWrapper, bottomDebug)
+              style(bottomDebug, {
+                  'z-index': 9999,
+                  position: 'absolute',
+                  top: zone.offsetBottom,
+                  right: 0,
+                  width: 25,
+                  height: 2,
+                  background: color
+              })
             })
+          }
 
-            let bottomDebug = clone(topDebug)
-            console.log('bottom', bottomDebug)
-            append(this.debugWrapper, bottomDebug)
-            style(bottomDebug, {
-                'z-index': 9999,
-                position: 'absolute',
-                top: zone.offsetBottom,
-                right: 0,
-                width: 25,
-                height: 2,
-                background: color
-            })
-        }
+          zone.size     = zone.offsetBottom - zone.offsetTop
+          zone.handle   = zoneConfig.handle || this.config.handle
+          zone.progress = zoneConfig.progress || this.config.progress
+          zone.snap     = zoneConfig.snap || this.config.snap
+          zone.handler  = zoneConfig.handler || this.config.handler
+          zone.enter    = zoneConfig.enter || this.config.enter
+          zone.leave    = zoneConfig.leave || this.config.leave
 
-        zone.size     = zone.offsetBottom - zone.offsetTop
-        zone.handle   = zoneConfig.handle || this.config.handle
-        zone.progress = zoneConfig.progress || this.config.progress
-        zone.snap     = zoneConfig.snap || this.config.snap
-        zone.handler  = zoneConfig.handler || this.config.handler
-        zone.enter    = zoneConfig.enter || this.config.enter
-        zone.leave    = zoneConfig.leave || this.config.leave
+          if (zoneConfig.tween) {
+              zone.tween = zoneConfig.tween
+              if (zone.tween.pause) zone.tween.pause()
+          }
 
-        if (zoneConfig.tween) {
-            zone.tween = zoneConfig.tween
-            if (zone.tween.pause) zone.tween.pause()
-        }
+          if (zoneConfig.progressTween) {
+              zone.progressTween = zoneConfig.progressTween
+              if (zone.progressTween.pause) zone.progressTween.pause()
+          }
 
-        if (zoneConfig.progressTween) {
-            zone.progressTween = zoneConfig.progressTween
-            if (zone.progressTween.pause) zone.progressTween.pause()
-        }
+          let handles = {}
+          let handleForward = zone.handle.forward || zone.handle
+          handles.forward = {
+              top: handleForward.top || handleForward,
+              bottom: handleForward.bottom || handleForward
+          }
+          let handleBackward = zone.handle.forward || zone.handle
+          handles.backward = {
+              top: handleBackward.top || handleBackward,
+              bottom: handleBackward.bottom || handleBackward
+          }
 
-        let handles = {}
-        let handleForward = zone.handle.forward || zone.handle
-        handles.forward = {
-            top: handleForward.top || handleForward,
-            bottom: handleForward.bottom || handleForward
-        }
-        let handleBackward = zone.handle.forward || zone.handle
-        handles.backward = {
-            top: handleBackward.top || handleBackward,
-            bottom: handleBackward.bottom || handleBackward
-        }
+          if (handles.forward.top == 'middle') {
+              zone.forwardTop = zone.offsetTop - this.halfHeight
+          }
+          else if (handles.forward.top == 'bottom') {
+              zone.forwardTop = zone.offsetTop - this.windowHeight
+          }
+          else {
+              zone.forwardTop = zone.offsetTop
+          }
 
-        if (handles.forward.top == 'middle') {
-            zone.forwardTop = zone.offsetTop - this.halfHeight
-        }
-        else if (handles.forward.top == 'bottom') {
-            zone.forwardTop = zone.offsetTop - this.windowHeight
-        }
-        else {
-            zone.forwardTop = zone.offsetTop
-        }
+          if (handles.forward.bottom == 'middle') {
+              zone.forwardBottom = zone.offsetBottom - this.halfHeight
+          }
+          else if (handles.forward.bottom == 'bottom') {
+              zone.forwardBottom = zone.offsetBottom - this.windowHeight
+          }
+          else {
+              zone.forwardBottom = zone.offsetBottom
+          }
 
-        if (handles.forward.bottom == 'middle') {
-            zone.forwardBottom = zone.offsetBottom - this.halfHeight
-        }
-        else if (handles.forward.bottom == 'bottom') {
-            zone.forwardBottom = zone.offsetBottom - this.windowHeight
-        }
-        else {
-            zone.forwardBottom = zone.offsetBottom
-        }
+          zone.forwardSize = Math.max(this.config.stepMinSize, zone.forwardBottom - zone.forwardTop)
 
-        zone.forwardSize = Math.max(this.config.stepMinSize, zone.forwardBottom - zone.forwardTop)
+          if (handles.backward.top == 'middle') {
+              zone.backwardTop = zone.offsetTop - this.halfHeight
+          }
+          else if (handles.backward.top == 'bottom') {
+              zone.backwardTop = zone.offsetTop - this.windowHeight
+          }
+          else {
+              zone.backwardTop = zone.offsetTop
+          }
 
-        if (handles.backward.top == 'middle') {
-            zone.backwardTop = zone.offsetTop - this.halfHeight
-        }
-        else if (handles.backward.top == 'bottom') {
-            zone.backwardTop = zone.offsetTop - this.windowHeight
-        }
-        else {
-            zone.backwardTop = zone.offsetTop
-        }
+          if (handles.backward.bottom == 'middle') {
+              zone.backwardBottom = zone.offsetBottom - this.halfHeight
+          }
+          else if (handles.backward.bottom == 'bottom') {
+              zone.backwardBottom = zone.offsetBottom - this.windowHeight
+          }
+          else {
+              zone.backwardBottom = zone.offsetBottom
+          }
 
-        if (handles.backward.bottom == 'middle') {
-            zone.backwardBottom = zone.offsetBottom - this.halfHeight
-        }
-        else if (handles.backward.bottom == 'bottom') {
-            zone.backwardBottom = zone.offsetBottom - this.windowHeight
-        }
-        else {
-            zone.backwardBottom = zone.offsetBottom
-        }
+          zone.backwardSize = Math.max(this.config.stepMinSize, zone.backwardBottom - zone.backwardTop)
 
-        zone.backwardSize = Math.max(this.config.stepMinSize, zone.backwardBottom - zone.backwardTop)
+          if (zone.snap) this.addSnapZone(zoneConfig, zone)
 
-        if (zone.snap) this.addSnapZone(zoneConfig, zone)
-
-        this.zones.push(zone)
-        this.updateZone(zone)
+          this.zones.push(zone)
+          this.updateZone(zone)
+        })
     }
 
     snapTo(top, direction) {
@@ -432,8 +443,10 @@ export default class Wasabi {
     onScrollEvent(event) {
         if (this.killed || this.lock) return
 
-        this.scrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
-        this.update()
+        fastdom.measure(() => {
+          this.scrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
+          this.update()
+        })
     }
 
     update() {
@@ -515,7 +528,9 @@ export default class Wasabi {
                         y: item.transform.y + dy
                     }
 
-                    translate(item.element, item.transform)
+                    fastdom.mutate(() => {
+                      translate(item.element, item.transform)
+                    })
 
                     if (!this.updatingParallax)
                         this.updatingParallax = Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1
@@ -562,9 +577,11 @@ export default class Wasabi {
 
             if (zone.parallax) {
                 forEach(zone.parallax, (item) => {
+                  fastdom.mutate(() => {
                     style(item.element, {
                         transform: ''
                     })
+                  })
                 })
             }
         }

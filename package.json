@@ -24,6 +24,7 @@
   "dependencies": {
     "chirashi": "^3.0.2",
     "chirashi-scroll-events": "^1.3.0",
+    "fastdom": "^1.0.5",
     "raf": "^3.2.0"
   }
 }
