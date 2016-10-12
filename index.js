@@ -44,7 +44,7 @@ function randomColor () {
 function translate2d(element, transformation, keep) {
     if (!element.style) return
 
-    let style = 'translate('+ (transformation.x || 0) +'px,'+ (transformation.y) || 0 +'px) rotate(0.0001deg)'
+    const style = 'translate('+ (transformation.x || 0).toFixed(2) +'px,'+ (transformation.y || 0).toFixed(2) +'px) rotate(0.0001deg)'
     element.style[prefix+'transform'] = style
     element.style.transform = style
 }
@@ -52,7 +52,7 @@ function translate2d(element, transformation, keep) {
 function translate3d(element, transformation, keep) {
     if (!element.style) return
 
-    let style = 'translate3d('+ (transformation.x || 0) +'px,'+ (transformation.y || 0) +'px,'+ (transformation.z || 0) +'px) rotate(0.0001deg)'
+    const style = 'translate3d('+ (transformation.x || 0).toFixed(2) +'px,'+ (transformation.y || 0).toFixed(2) +'px,'+ (transformation.z || 0).toFixed(2) +'px) rotate(0.0001deg)'
     element.style[prefix+'transform'] = style
     element.style.transform = style
 }
@@ -202,23 +202,23 @@ export default class Wasabi {
                   forEach(find(element, zoneConfig.parallax), (pxElement) => {
                       let options = eval('('+data(pxElement,'wasabi')+')')
 
-                      let toX    = (typeof options.x !== 'undefined') ? options.x : ((options.to && options.to.x) || 0),
-                      toY        = (typeof options.y !== 'undefined') ? options.y : ((options.to && options.to.y) || 0),
-                      fromX      = (options.from && options.from.x) || 0,
-                      fromY      = (options.from && options.from.y) || 0,
-                      parentSize = size(element.parentNode)
+                      let toX        = (typeof options.x !== 'undefined') ? options.x : ((options.to && options.to.x) || 0),
+                          toY        = (typeof options.y !== 'undefined') ? options.y : ((options.to && options.to.y) || 0),
+                          fromX      = (options.from && options.from.x) || 0,
+                          fromY      = (options.from && options.from.y) || 0,
+                          parentSize = size(element.parentNode)
 
                       if (typeof toX == 'string' && toX.indexOf('%') != -1)
-                      toX = parseInt(toX, 10) * parentSize.width
+                        toX = parseInt(toX, 10) * parentSize.width
 
                       if (typeof toY == 'string' && toY.indexOf('%') != -1)
-                      toY = parseInt(toY, 10) * parentSize.height
+                        toY = parseInt(toY, 10) * parentSize.height
 
                       if (typeof fromX == 'string' && fromX.indexOf('%') != -1)
-                      fromX = parseInt(fromX, 10) * parentSize.width
+                        fromX = parseInt(fromX, 10) * parentSize.width
 
                       if (typeof fromY == 'string' && fromY.indexOf('%') != -1)
-                      fromY = parseInt(fromY, 10) * parentSize.height
+                        fromY = parseInt(fromY, 10) * parentSize.height
 
                       zone.parallax.push({
                           element: pxElement,
@@ -234,6 +234,12 @@ export default class Wasabi {
                               x: 0,
                               y: 0
                           }
+                      })
+
+                      fastdom.mutate(() => {
+                        style(pxElement, {
+                            'will-change': 'transform'
+                        })
                       })
                   })
               }
