@@ -44,17 +44,15 @@ function randomColor () {
 function translate2d(element, transformation, keep) {
     if (!element.style) return
 
-    const style = 'translate('+ (transformation.x || 0).toFixed(2) +'px,'+ (transformation.y || 0).toFixed(2) +'px) rotate(0.0001deg)'
+    let style = `translate(${transformation.x || 0}px,${transformation.y  || 0}px) rotate(0.0001deg)`
     element.style[prefix+'transform'] = style
-    element.style.transform = style
 }
 
 function translate3d(element, transformation, keep) {
     if (!element.style) return
 
-    const style = 'translate3d('+ (transformation.x || 0).toFixed(2) +'px,'+ (transformation.y || 0).toFixed(2) +'px,'+ (transformation.z || 0).toFixed(2) +'px) rotate(0.0001deg)'
+    let style = `translate3d(${transformation.x || 0}px,${transformation.y || 0}px,0) rotate(0.0001deg)`
     element.style[prefix+'transform'] = style
-    element.style.transform = style
 }
 
 const prefix = '-'+(Array.prototype.slice
@@ -134,6 +132,7 @@ export default class Wasabi {
     refresh() {
         if (this.config.debug) console.log('%c WASABI DEBUG ', 'background: #2d2d2d; color: #b0dd44')
 
+        this.parallaxId = []
         this.zones = []
 
         if (this.config.debug) remove('#wasabi-debug .wasabi-marker')
@@ -202,23 +201,23 @@ export default class Wasabi {
                   forEach(find(element, zoneConfig.parallax), (pxElement) => {
                       let options = eval('('+data(pxElement,'wasabi')+')')
 
-                      let toX        = (typeof options.x !== 'undefined') ? options.x : ((options.to && options.to.x) || 0),
-                          toY        = (typeof options.y !== 'undefined') ? options.y : ((options.to && options.to.y) || 0),
-                          fromX      = (options.from && options.from.x) || 0,
-                          fromY      = (options.from && options.from.y) || 0,
-                          parentSize = size(element.parentNode)
+                      let toX    = (typeof options.x !== 'undefined') ? options.x : ((options.to && options.to.x) || 0),
+                      toY        = (typeof options.y !== 'undefined') ? options.y : ((options.to && options.to.y) || 0),
+                      fromX      = (options.from && options.from.x) || 0,
+                      fromY      = (options.from && options.from.y) || 0,
+                      parentSize = size(element.parentNode)
 
                       if (typeof toX == 'string' && toX.indexOf('%') != -1)
-                        toX = parseInt(toX, 10) * parentSize.width
+                      toX = parseInt(toX, 10) * parentSize.width
 
                       if (typeof toY == 'string' && toY.indexOf('%') != -1)
-                        toY = parseInt(toY, 10) * parentSize.height
+                      toY = parseInt(toY, 10) * parentSize.height
 
                       if (typeof fromX == 'string' && fromX.indexOf('%') != -1)
-                        fromX = parseInt(fromX, 10) * parentSize.width
+                      fromX = parseInt(fromX, 10) * parentSize.width
 
                       if (typeof fromY == 'string' && fromY.indexOf('%') != -1)
-                        fromY = parseInt(fromY, 10) * parentSize.height
+                      fromY = parseInt(fromY, 10) * parentSize.height
 
                       zone.parallax.push({
                           element: pxElement,
@@ -234,12 +233,6 @@ export default class Wasabi {
                               x: 0,
                               y: 0
                           }
-                      })
-
-                      fastdom.mutate(() => {
-                        style(pxElement, {
-                            'will-change': 'transform'
-                        })
                       })
                   })
               }
@@ -449,7 +442,8 @@ export default class Wasabi {
     onScrollEvent(event) {
         if (this.killed || this.lock) return
 
-        fastdom.measure(() => {
+        fastdom.clear(this.scrollMeasure)
+        this.scrollMeasure = fastdom.measure(() => {
           this.scrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
           this.update()
         })
@@ -519,6 +513,8 @@ export default class Wasabi {
 
         this.updatingParallax = false
 
+        const { parallaxEase } = this.config
+
         let i = this.zones.length
 
         while (i--) {
@@ -526,20 +522,18 @@ export default class Wasabi {
 
             if (zone.parallax) {
                 forEach(zone.parallax, (item) => {
-                    let dx = (item.targetTransform.x - item.transform.x) * this.config.parallaxEase,
-                        dy = (item.targetTransform.y - item.transform.y) * this.config.parallaxEase
+                    let dx = (item.targetTransform.x - item.transform.x) * parallaxEase,
+                        dy = (item.targetTransform.y - item.transform.y) * parallaxEase
 
                     item.transform = {
-                        x: item.transform.x + dx,
-                        y: item.transform.y + dy
+                        x: +((item.transform.x + dx).toFixed(2)),
+                        y: +((item.transform.y + dy).toFixed(2))
                     }
 
-                    fastdom.mutate(() => {
-                      translate(item.element, item.transform)
-                    })
+                    fastdom.mutate(translate.bind(null, item.element, item.transform))
 
                     if (!this.updatingParallax)
-                        this.updatingParallax = Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1
+                        this.updatingParallax = !!(Math.abs(dx) || Math.abs(dy))
                 })
             }
         }
