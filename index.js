@@ -362,7 +362,7 @@ export default class Wasabi {
           if (zone.snap) this.addSnapZone(zoneConfig, zone)
 
           this.zones.push(zone)
-          this.updateZone(zone)
+          if (this.updateZone(zone)) this.updateParallaxIfNeeded()
         })
     }
 
