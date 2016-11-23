@@ -141,7 +141,6 @@ export default class Wasabi {
     }
 
     bindZones(zones) {
-        console.log('bindZones', zones)
         let i = zones.length
         while (i--) {
             let zoneConfig = zones[i]

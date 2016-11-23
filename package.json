@@ -1,6 +1,6 @@
 {
   "name": "chirashi-wasabi",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Wasabi - Scroll events manager based on Chirashi",
   "main": "index.js",
   "scripts": {
