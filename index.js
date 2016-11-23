@@ -41,30 +41,9 @@ function randomColor () {
     return '#' + Math.floor(Math.random()*16777215).toString(16)
 }
 
-function translate2d(element, transformation, keep) {
-    if (!element.style) return
-
-    let style = `translate(${transformation.x || 0}px,${transformation.y  || 0}px) rotate(0.0001deg)`
-    element.style[prefix+'transform'] = style
+function translate(element, transformation) {
+    element.style.transform = `matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,${transformation.x || 0}, ${transformation.y || 0}, 0, 1)`
 }
-
-function translate3d(element, transformation, keep) {
-    if (!element.style) return
-
-    let style = `translate3d(${transformation.x || 0}px,${transformation.y || 0}px,0) rotate(0.0001deg)`
-    element.style[prefix+'transform'] = style
-}
-
-const prefix = '-'+(Array.prototype.slice
-  .call(window.getComputedStyle(document.documentElement, ''))
-  .join('')
-  .match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
-)[1]+'-'
-document.documentElement.style[prefix+'transform'] = 'translate3d(0, 0, 0)'
-const use2d = !document.documentElement.style[prefix+'transform']
-document.documentElement.style[prefix+'transform'] = ''
-
-const translate = use2d ? translate2d : translate3d
 
 //Scroll manager
 export default class Wasabi {
@@ -130,6 +109,7 @@ export default class Wasabi {
     }
 
     refresh() {
+        this.ready = false
         if (this.config.debug) console.log('%c WASABI DEBUG ', 'background: #2d2d2d; color: #b0dd44')
 
         this.parallaxId = []
@@ -147,6 +127,7 @@ export default class Wasabi {
             this.scrollTop = this.previousScrollTop = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) - this.wrapperTop
 
           this.bindZones(this.zonesConfig)
+          this.ready = true
         })
     }
 
@@ -156,10 +137,11 @@ export default class Wasabi {
 
         this.zonesConfig = [...this.zonesConfig, ...zones]
 
-        this.bindZones(zones)
+        if (this.ready) this.bindZones(zones)
     }
 
     bindZones(zones) {
+        console.log('bindZones', zones)
         let i = zones.length
         while (i--) {
             let zoneConfig = zones[i]
@@ -233,6 +215,10 @@ export default class Wasabi {
                               x: 0,
                               y: 0
                           }
+                      })
+
+                      style(pxElement, {
+                          willChange: 'transform'
                       })
                   })
               }
@@ -579,7 +565,8 @@ export default class Wasabi {
                 forEach(zone.parallax, (item) => {
                   fastdom.mutate(() => {
                     style(item.element, {
-                        transform: ''
+                        transform: '',
+                        willChange: ''
                     })
                   })
                 })
