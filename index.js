@@ -45,6 +45,20 @@ function translate(element, transformation) {
     element.style.transform = `matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,${transformation.x || 0}, ${transformation.y || 0}, 0, 1)`
 }
 
+const uniqCache = []
+
+function uniq() {
+    let ret = `wsb-${~~(Math.random() * 99999)}`
+
+    while (uniqCache.indexOf(ret) !== -1) {
+        ret = `wsb-${~~(Math.random() * 99999)}`
+    }
+
+    uniqCache.push(ret)
+
+    return ret
+}
+
 //Scroll manager
 export default class Wasabi {
     constructor(config) {
@@ -94,7 +108,8 @@ export default class Wasabi {
             append(this.wrapper, this.debugWrapper)
         }
 
-        this.zonesConfig = (this.config.zones instanceof Array) ? this.config.zones : [this.config.zones]
+        this.zonesConfig = []
+        this.addZones(this.config.zones)
 
         this.running = true
         this.refresh()
@@ -135,9 +150,33 @@ export default class Wasabi {
         if (!(zones instanceof Array))
             zones = [zones]
 
+        const ids = []
+        forEach(zones, zone => {
+            if (!zone.uniq) zone.uniq = uniq()
+            ids.push(zone.uniq)
+        })
+
         this.zonesConfig = [...this.zonesConfig, ...zones]
 
         if (this.ready) this.bindZones(zones)
+
+        return ids
+    }
+
+    removeZones(ids) {
+        forEach(ids, id => {
+            forEach(this.zonesConfig, (zone, index) => {
+                if (zone.uniq === id) {
+                    this.zonesConfig.splice(index, 1)
+                }
+            })
+
+            forEach(this.zones, (zone, index) => {
+                if (zone.uniq === id) {
+                    this.zones.splice(index, 1)
+                }
+            })
+        })
     }
 
     bindZones(zones) {
@@ -167,7 +206,7 @@ export default class Wasabi {
     }
 
     bindZone(zoneConfig, element) {
-        let zone = {},
+        let zone = { uniq: zoneConfig.uniq },
         top, bottom
 
         fastdom.measure(() => {
@@ -382,7 +421,7 @@ export default class Wasabi {
     }
 
     addSnapZone(zoneConfig, zone) {
-        let snapZone = {}
+        let snapZone = { uniq: zoneConfig.uniq }
 
         snapZone.top = zone.top
         snapZone.bottom = zone.bottom
