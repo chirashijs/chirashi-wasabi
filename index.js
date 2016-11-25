@@ -124,6 +124,8 @@ export default class Wasabi {
     }
 
     refresh() {
+        fastdom.clear(this.refreshID)
+
         this.ready = false
         if (this.config.debug) console.log('%c WASABI DEBUG ', 'background: #2d2d2d; color: #b0dd44')
 
@@ -132,7 +134,7 @@ export default class Wasabi {
 
         if (this.config.debug) remove('#wasabi-debug .wasabi-marker')
 
-        fastdom.measure(() => {
+        this.refreshID = fastdom.measure(() => {
           this.windowHeight = window.innerHeight
           this.halfHeight = this.windowHeight/2
 
